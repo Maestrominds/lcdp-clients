@@ -23,8 +23,8 @@
       inventory = inv || [];
       dishes = (m || []).map(dish => ({
         ...dish,
-        ingredients: ingredients.filter(i => i.menu_item === dish.name).map(i => {
-          const invItem = inventory.find(inv => inv.name === i.inventory_item);
+        ingredients: ingredients.filter(i => i.menu_item?.toLowerCase() === dish.name?.toLowerCase()).map(i => {
+          const invItem = inventory.find(inv => inv.name?.toLowerCase() === i.inventory_item?.toLowerCase());
           return { ...i, unit: invItem?.unit || '' };
         })
       }));

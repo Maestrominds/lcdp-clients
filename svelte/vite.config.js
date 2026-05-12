@@ -6,7 +6,7 @@ export default defineConfig({
 	server: {
 		proxy: {
 			'/api': {
-				target: 'https://backend-cafe-p6o5.onrender.com',
+				target: 'https://lcdp-server-production.up.railway.app',
 				changeOrigin: true,
 				rewrite: (path) => path.replace(/^\/api/, ''),
 				configure: (proxy) => {

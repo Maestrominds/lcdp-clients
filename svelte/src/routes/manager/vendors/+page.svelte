@@ -14,7 +14,7 @@
       const bills = b || [];
       vendors = (v || []).map(vendor => ({
         ...vendor,
-        bill_count: bills.filter(bill => bill.vendor === vendor.name).length
+        bill_count: bills.filter(bill => bill.vendor?.toLowerCase() === vendor.name?.toLowerCase()).length
       }));
     } catch(e) {} finally { loading = false; } 
   });
