@@ -65,7 +65,7 @@
               <td class="rank">#{item.rank}</td>
               <td class="fw500">{item.name}</td>
               <td>{item.unitsSold}</td>
-              <td>€{item.revenue}</td>
+              <td>₹{item.revenue}</td>
               <td class="growth">↑{item.growth}%</td>
             </tr>
           {/each}

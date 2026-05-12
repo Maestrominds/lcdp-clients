@@ -23,7 +23,7 @@ class MenuItem {
       description: json['description'] as String? ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0,
       category: json['category'] as String? ?? 'mains',
-      isSoldOut: json['soldOut'] as bool? ?? !(json['is_available'] as bool? ?? true),
+      isSoldOut: !(json['is_available'] as bool? ?? true),
     );
   }
 

@@ -71,7 +71,7 @@
     <div class="kpi-row">
       <KpiCard label="CRITICAL STOCK" value={String(criticalItems.length)} color="var(--error-red)" subtitle="items need reorder" />
       <KpiCard label="LOW STOCK" value={String(lowItems.length)} color="var(--warning-orange)" subtitle="items running low" />
-      <KpiCard label="PENDING PAYABLES" value="€{totalOutstanding.toFixed(2)}" color="var(--primary-teal)" subtitle="{pendingPay.length + overduePay.length} invoices" />
+      <KpiCard label="PENDING PAYABLES" value="₹{totalOutstanding.toFixed(2)}" color="var(--primary-teal)" subtitle="{pendingPay.length + overduePay.length} invoices" />
       <KpiCard label="UNREAD ALERTS" value={String(unreadAlerts.length)} subtitle="need attention" />
     </div>
 

@@ -3,9 +3,12 @@
   import TopBar from '$lib/components/shared/TopBar.svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { logout } from '$lib/stores/auth.js';
+  import { logout, userProfile } from '$lib/stores/auth.js';
 
   let { children } = $props();
+
+  let user = $state({});
+  userProfile.subscribe(v => user = v);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', path: '/manager/dashboard', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' },
@@ -30,6 +33,11 @@
     if (id === 'signout') { logout(); goto('/manager/login'); }
     else goto(path);
   }
+
+  const initials = $derived(() => {
+    if (!user.name) return 'MG';
+    return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  });
 </script>
 
 {#if isLoginPage}
@@ -38,7 +46,16 @@
   <div class="manager-layout">
     <Sidebar items={navItems} {activeItem} role="manager" onNavigate={handleNavigate} />
     <div class="main-area">
-      <TopBar title={pageTitle} showSearch={true} searchPlaceholder="Search inventory..." showScanBtn={true} onScan={() => goto('/manager/scan-bills')} notificationCount={3} userName="Manager" avatarInitials="MG" />
+      <TopBar 
+        title={pageTitle} 
+        showSearch={true} 
+        searchPlaceholder="Search inventory..." 
+        showScanBtn={true} 
+        onScan={() => goto('/manager/scan-bills')} 
+        notificationCount={0} 
+        userName={user.name || 'Manager'} 
+        avatarInitials={initials()} 
+      />
       <main class="content">{@render children()}</main>
     </div>
   </div>

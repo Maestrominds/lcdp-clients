@@ -62,9 +62,9 @@
     <div class="loading-state">Loading...</div>
   {:else if data}
     <div class="kpi-row">
-      <KpiCard label="TODAY'S REVENUE" value="€{data.todayRevenue?.toLocaleString()}" trend="{data.todayChange}%" trendUp={data.todayChange > 0} />
-      <KpiCard label="WEEKLY REVENUE" value="€{data.weeklyRevenue?.toLocaleString()}" trend="{data.weeklyChange}%" trendUp={data.weeklyChange > 0} />
-      <KpiCard label="MONTHLY REVENUE" value="€{data.monthlyRevenue?.toLocaleString()}" trend="{data.monthlyChange}%" trendUp={data.monthlyChange > 0} color="var(--primary-teal)" />
+      <KpiCard label="TODAY'S REVENUE" value="₹{data.todayRevenue?.toLocaleString()}" trend="{data.todayChange}%" trendUp={data.todayChange > 0} />
+      <KpiCard label="WEEKLY REVENUE" value="₹{data.weeklyRevenue?.toLocaleString()}" trend="{data.weeklyChange}%" trendUp={data.weeklyChange > 0} />
+      <KpiCard label="MONTHLY REVENUE" value="₹{data.monthlyRevenue?.toLocaleString()}" trend="{data.monthlyChange}%" trendUp={data.monthlyChange > 0} color="var(--primary-teal)" />
       <KpiCard label="YOY GROWTH" value="{data.yoyGrowth}%" trend="{data.yoyChange}%" trendUp={data.yoyChange > 0} />
     </div>
     <div class="card chart-card"><h3>Daily Revenue</h3><div class="chart-box"><canvas bind:this={dailyCanvas}></canvas></div></div>

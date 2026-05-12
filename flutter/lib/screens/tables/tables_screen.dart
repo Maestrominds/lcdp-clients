@@ -6,9 +6,10 @@ import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../widgets/status_badge.dart';
 import '../../models/table_model.dart';
+import '../../models/order.dart';
 import 'table_detail_screen.dart';
+import '../auth/phone_login_screen.dart';
 
-/// Screen 5 — Tables Tab
 class TablesScreen extends StatefulWidget {
   const TablesScreen({super.key});
   @override
@@ -17,14 +18,15 @@ class TablesScreen extends StatefulWidget {
 
 class _TablesScreenState extends State<TablesScreen> {
   List<TableModel> _tables = [];
+  List<Order> _allOrders = [];
   bool _loading = true;
   Timer? _pollingTimer;
 
   @override
   void initState() { 
     super.initState(); 
-    _loadTables(); 
-    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) => _loadTables());
+    _refreshData(); 
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) => _refreshData());
   }
 
   @override
@@ -33,15 +35,14 @@ class _TablesScreenState extends State<TablesScreen> {
     super.dispose();
   }
 
-  Future<void> _loadTables() async {
+  Future<void> _refreshData() async {
     try {
-      final data = await ApiService().getTables();
+      final tablesData = await ApiService().getTables();
+      final ordersData = await ApiService().getOrders();
       if (!mounted) return;
       setState(() { 
-        _tables = (data as List).map<TableModel>((t) => TableModel.fromJson(t as Map<String, dynamic>)).toList(); 
-        for (var t in _tables) {
-          debugPrint('[DEBUG] Table ${t.name} status: ${t.status} (raw: ${t.status.name})');
-        }
+        _tables = (tablesData as List).map<TableModel>((t) => TableModel.fromJson(t as Map<String, dynamic>)).toList(); 
+        _allOrders = (ordersData as List).map<Order>((o) => Order.fromJson(o as Map<String, dynamic>)).toList();
         _loading = false; 
       });
     } catch (e) {
@@ -50,119 +51,123 @@ class _TablesScreenState extends State<TablesScreen> {
     }
   }
 
+  bool _hasReadyOrder(String tableId) {
+    return _allOrders.any((o) => o.tableId == tableId && o.status == OrderStatus.ready);
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Logout', style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              await ApiService().clearToken();
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const PhoneLoginScreen()), (route) => false);
+            },
+            child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background, elevation: 0, centerTitle: true,
-        title: Text('Tables', style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        backgroundColor: AppColors.background, elevation: 0,
+        title: Text('Cafe De Paris', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+        actions: [
+          IconButton(
+            icon: const FaIcon(FontAwesomeIcons.rightFromBracket, size: 18, color: AppColors.errorRed),
+            onPressed: _showLogoutDialog,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryTeal))
-          : Padding(
-              padding: const EdgeInsets.all(16),
+          : RefreshIndicator(
+              onRefresh: _refreshData,
+              color: AppColors.primaryTeal,
               child: GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.9, 
+                  crossAxisCount: 2, crossAxisSpacing: 20, mainAxisSpacing: 20, childAspectRatio: 0.72,
                 ),
                 itemCount: _tables.length,
                 itemBuilder: (ctx, i) {
                   final table = _tables[i];
-                  final canOrder = table.status != TableStatus.billed;
-                  final showBilled = table.status == TableStatus.eating;
-                  final showAvailable = table.status == TableStatus.billed;
+                  final isReady = _hasReadyOrder(table.id);
 
                   return GestureDetector(
-                    onTap: canOrder ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => TableDetailScreen(table: table))).then((_) => _loadTables()) : null,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TableDetailScreen(table: table))).then((_) => _refreshData()),
                     child: Container(
                       decoration: BoxDecoration(
                         color: AppColors.cardSurface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.border, width: 1),
-                        boxShadow: AppTheme.cardShadow,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: isReady ? AppColors.readyText : AppColors.border, 
+                          width: isReady ? 2.5 : 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          )
+                        ],
                       ),
                       child: Column(
                         children: [
                           Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Beautiful Icon Container
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.primaryTeal.withValues(alpha: 0.15),
-                                          AppColors.primaryTeal.withValues(alpha: 0.05),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      shape: BoxShape.circle,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                if (isReady)
+                                  Positioned(
+                                    top: 15, right: 15,
+                                    child: Container(
+                                      width: 12, height: 12,
+                                      decoration: const BoxDecoration(color: AppColors.readyText, shape: BoxShape.circle),
                                     ),
-                                    child: const Center(
+                                  ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: isReady ? AppColors.readyBg : AppColors.primaryTeal.withValues(alpha: 0.05),
+                                        shape: BoxShape.circle,
+                                      ),
                                       child: FaIcon(
                                         FontAwesomeIcons.chair, 
-                                        color: AppColors.primaryTeal,
-                                        size: 16,
+                                        color: isReady ? AppColors.readyText : AppColors.primaryTeal, 
+                                        size: 24,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    table.name,
-                                    style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  StatusBadge.fromTableStatus(table.status),
-                                ],
-                              ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      table.name, 
+                                      style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    StatusBadge.fromTableStatus(table.status),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          
-                          // Quick Action Buttons
-                          if (showBilled || showAvailable)
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
-                              ),
-                              child: Row(
-                                children: [
-                                  if (showBilled)
-                                    Expanded(
-                                      child: _actionButton(
-                                        'Bill',
-                                        FontAwesomeIcons.receipt,
-                                        AppColors.billingText,
-                                        () async {
-                                          await ApiService().updateTableStatus(table.id, 'billed');
-                                          _loadTables();
-                                        },
-                                      ),
-                                    ),
-                                  if (showAvailable)
-                                    Expanded(
-                                      child: _actionButton(
-                                        'Free',
-                                        FontAwesomeIcons.rotateRight,
-                                        AppColors.successGreen,
-                                        () async {
-                                          await ApiService().updateTableStatus(table.id, 'available');
-                                          _loadTables();
-                                        },
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                          _buildActionArea(table),
                         ],
                       ),
                     ),
@@ -173,24 +178,54 @@ class _TablesScreenState extends State<TablesScreen> {
     );
   }
 
-  Widget _actionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionArea(TableModel table) {
+    if (table.status == TableStatus.available) return const SizedBox(height: 16);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      ),
+      child: Row(
+        children: [
+          if (table.status == TableStatus.ready || table.status == TableStatus.ordered || table.status == TableStatus.preparing)
+            Expanded(
+              child: _boutiqueButton('SERVE', AppColors.successGreen, () async {
+                await ApiService().updateTableStatus(table.id, 'eating');
+                _refreshData();
+              }),
+            ),
+          if (table.status == TableStatus.eating)
+            Expanded(
+              child: _boutiqueButton('CLEAR', AppColors.primaryTeal, () async {
+                await ApiService().updateTableStatus(table.id, 'available');
+                _refreshData();
+              }),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _boutiqueButton(String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 30, // Even smaller for a boutique feel
+        height: 36,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FaIcon(icon, size: 10, color: color),
-            const SizedBox(width: 4),
-            Text(label, style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))
           ],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1),
         ),
       ),
     );
   }
 }
+

@@ -1,16 +1,33 @@
 <script>
   import { api } from '$lib/api.js';
+  import { userProfile } from '$lib/stores/auth.js';
+  import { onMount } from 'svelte';
 
-  let fullName = $state('Owner');
-  let email = $state('owner@cafedeparis.com');
+  let fullName = $state('');
+  let email = $state('');
+  let phone = $state('');
   let criticalAlerts = $state(true);
   let revenueReports = $state(true);
   let weeklyDigest = $state(true);
   let saving = $state(false);
 
+  onMount(() => {
+    userProfile.subscribe(user => {
+      if (user) {
+        fullName = user.name || '';
+        email = user.email || 'owner@cafedeparis.com';
+        phone = user.phone || '';
+      }
+    });
+  });
+
   async function saveProfile() {
     saving = true;
-    try { await api.updateProfile({ fullName }); alert('Profile updated!'); } 
+    try { 
+      // Update local store as well if successful (if backend supported it)
+      await api.updateProfile({ fullName }); 
+      alert('Profile updated!'); 
+    } 
     catch(e) { alert('Failed to update profile'); }
     finally { saving = false; }
   }

@@ -3,9 +3,12 @@
   import TopBar from '$lib/components/shared/TopBar.svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { logout } from '$lib/stores/auth.js';
+  import { logout, userProfile } from '$lib/stores/auth.js';
 
   let { children } = $props();
+
+  let user = $state({});
+  userProfile.subscribe(v => user = v);
 
   const navItems = [
     { id: 'overview', label: 'Overview', path: '/owner/overview', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' },
@@ -28,6 +31,11 @@
     if (id === 'signout') { logout(); goto('/owner/login'); }
     else goto(path);
   }
+
+  const initials = $derived(() => {
+    if (!user.name) return 'OW';
+    return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  });
 </script>
 
 {#if isLoginPage}
@@ -36,7 +44,14 @@
   <div class="owner-layout">
     <Sidebar items={navItems} {activeItem} role="owner" onNavigate={handleNavigate} />
     <div class="main-area">
-      <TopBar title={pageTitle} showSearch={true} searchPlaceholder="Search reports..." notificationCount={5} userName="Owner" avatarInitials="OW" />
+      <TopBar 
+        title={pageTitle} 
+        showSearch={true} 
+        searchPlaceholder="Search reports..." 
+        notificationCount={0} 
+        userName={user.name || 'Owner'} 
+        avatarInitials={initials()} 
+      />
       <main class="content">{@render children()}</main>
     </div>
   </div>

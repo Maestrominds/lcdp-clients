@@ -47,7 +47,7 @@ class MenuItemCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('€${item.price.toStringAsFixed(2)}', style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryTeal)),
+              Text('₹${item.price.toStringAsFixed(2)}', style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryTeal)),
               const SizedBox(height: 8),
               if (item.isSoldOut)
                 Container(

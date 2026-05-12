@@ -56,9 +56,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               const Spacer(flex: 2),
               // Logo
               Container(
-                width: 64, height: 64,
-                decoration: BoxDecoration(color: AppColors.primaryTeal, borderRadius: BorderRadius.circular(16)),
-                child: const Center(child: FaIcon(FontAwesomeIcons.utensils, color: Colors.white, size: 24)),
+                width: 100, height: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(color: AppColors.primaryTeal.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset('assets/app_icon.png', fit: BoxFit.cover),
+                ),
               ),
               const SizedBox(height: 16),
               Text('Cafe De Paris', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.primaryTeal)),

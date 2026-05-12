@@ -8,9 +8,7 @@ import 'client_stub.dart'
 
 /// API abstraction layer for Cafe De Paris.
 /// All API calls go through this singleton.
-final String baseUrl = (kIsWeb || defaultTargetPlatform != TargetPlatform.android) 
-    ? 'http://127.0.0.1:8080/v1' 
-    : 'http://10.0.2.2:8080/v1';
+final String baseUrl = 'https://lcdp-server-production.up.railway.app';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -38,14 +36,17 @@ class ApiService {
     debugPrint('[API GET] $url');
     try {
       final res = await _client.get(Uri.parse(url), headers: await _headers)
-          .timeout(const Duration(seconds: 30));
-      debugPrint('[API GET] $url → ${res.statusCode}');
+          .timeout(const Duration(seconds: 45)); // Increased timeout for Render cold starts
+      
+      debugPrint('[API GET SUCCESS] $url → Status: ${res.statusCode}');
+      debugPrint('[API GET BODY] ${res.body}');
+      
       _updateCookie(res);
       if (res.statusCode == 401) { await clearToken(); throw ApiException(401, 'Unauthorized'); }
       if (res.statusCode == 200) return jsonDecode(res.body);
       throw ApiException(res.statusCode, res.body);
     } catch (e) {
-      debugPrint('[API GET ERROR] $url → $e');
+      debugPrint('[API GET FAILED] $url → Error: $e');
       rethrow;
     }
   }
@@ -106,10 +107,10 @@ class ApiService {
 
   // Auth
   Future<Map<String, dynamic>> sendOtp(String phone) async =>
-      await post('/auth/otp/send', {'phone': phone}) as Map<String, dynamic>;
+      await get('/login?phone=$phone&role=waiter') as Map<String, dynamic>;
 
   Future<Map<String, dynamic>> verifyOtp(String phone, String code) async =>
-      await post('/auth/otp/verify', {'phone': phone, 'code': code}) as Map<String, dynamic>;
+      await post('/login/verify', {'phone': phone, 'otp': code}) as Map<String, dynamic>;
 
   void _updateCookie(http.Response response) {
     if (kIsWeb) return; // Browser handles cookies on Web
@@ -132,24 +133,41 @@ class ApiService {
   }
 
   // Tables
-  Future<List> getTables() async => await get('/tables') as List;
-  Future<Map<String, dynamic>> getTable(String id) async => await get('/tables/$id') as Map<String, dynamic>;
-  Future<dynamic> updateTableStatus(String id, String status) async => await patch('/tables/$id/status', {'status': status});
+  Future<List> getTables() async => await get('/dining-tables') as List;
+  Future<Map<String, dynamic>> getTable(String id) async => await get('/dining-tables/$id') as Map<String, dynamic>;
+  Future<dynamic> updateTableStatus(String id, String status) async => 
+      await patch('/dining-tables/$id/status', {'status': status});
 
   // Menu
+  Future<List> getAllMenuItems() async => await get('/menu-items') as List;
+
   Future<List> getMenu([String? category]) async {
-    final path = category != null ? '/menu?category=$category' : '/menu';
+    final path = category != null ? '/menu-items?category=$category' : '/menu-items';
     return await get(path) as List;
   }
 
   // Orders
   Future<List> getOrders() async => await get('/orders') as List;
-  Future<Map<String, dynamic>> sendToKitchen(String tableId, List<Map<String, dynamic>> items) async {
+
+  Future<void> sendToKitchen(String tableId, List<Map<String, dynamic>> items) async {
     debugPrint('[API] Sending order for table $tableId with ${items.length} items');
-    return await post('/orders', {'tableId': tableId, 'items': items}) as Map<String, dynamic>;
+    
+    // The backend expects individual OrderRequest objects: {menu_item_id, quantity, table_id}
+    for (var item in items) {
+      final orderData = {
+        'menu_item_id': int.tryParse(item['id'].toString()) ?? 0,
+        'quantity': item['quantity'] ?? 1,
+        'table_id': int.tryParse(tableId) ?? 0,
+        'ordered_at': DateTime.now().toUtc().toIso8601String(),
+      };
+      await post('/orders', orderData);
+    }
+    // Automatically move table to 'ordered' status
+    await updateTableStatus(tableId, 'ordered');
   }
+
   Future<dynamic> markServed(String orderId) async =>
-      await patch('/orders/${Uri.encodeComponent(orderId)}/served');
+      await delete('/orders/$orderId'); // The backend uses DELETE for orders (Docs show delete, but no served endpoint)
 }
 
 class ApiException implements Exception {

@@ -1,10 +1,32 @@
 <script>
-  let fullName = $state('Manager');
-  let email = $state('manager@cafedeparis.com');
+  import { onMount } from 'svelte';
+  import { userProfile } from '$lib/stores/auth.js';
+  import { api } from '$lib/api.js';
+
+  let fullName = $state('');
+  let email = $state('');
+  let phone = $state('');
   let criticalAlerts = $state(true);
   let lowStockAlerts = $state(true);
   let overdueAlerts = $state(true);
-</script>
+  let saving = $state(false);
+
+  onMount(() => {
+    userProfile.subscribe(user => {
+      if (user) {
+        fullName = user.name || '';
+        email = user.email || 'manager@cafedeparis.com';
+        phone = user.phone || '';
+      }
+    });
+  });
+
+  async function saveProfile() {
+    saving = true;
+    try { await api.updateProfile({ fullName }); alert('Profile updated!'); } 
+    catch(e) { alert('Failed to update profile'); }
+    finally { saving = false; }
+  }
 
 <svelte:head><title>Settings — Cafe De Paris</title></svelte:head>
 

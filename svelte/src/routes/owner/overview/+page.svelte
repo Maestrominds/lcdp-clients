@@ -28,7 +28,7 @@
         data: { 
           labels: data.weeklyLabels || ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], 
           datasets: [{ 
-            label: 'Revenue (€)', 
+            label: 'Revenue (₹)', 
             data: $state.snapshot((data.weeklyRevenue && data.weeklyRevenue.length > 0) ? data.weeklyRevenue : [0,0,0,0,0,0,0]), 
             borderColor: '#1E5F74', 
             backgroundColor: 'rgba(30,95,116,0.1)', 
@@ -52,9 +52,9 @@
     <div class="skeleton-row">{#each [1,2,3,4] as _}<div class="skeleton-card"></div>{/each}</div>
   {:else if data}
     <div class="kpi-row">
-      <KpiCard label="TODAY'S REVENUE" value="€{data.todayRevenue?.toLocaleString()}" trend="{data.revenueChange}%" trendUp={data.revenueChange > 0} color="var(--primary-teal)" />
+      <KpiCard label="TODAY'S REVENUE" value="₹{data.todayRevenue?.toLocaleString()}" trend="{data.revenueChange}%" trendUp={data.revenueChange > 0} color="var(--primary-teal)" />
       <KpiCard label="ORDERS TODAY" value={String(data.ordersToday)} trend="{data.ordersChange}%" trendUp={data.ordersChange > 0} />
-      <KpiCard label="AVG ORDER VALUE" value="€{data.avgOrderValue}" trend="{Math.abs(data.avgOrderChange)}%" trendUp={data.avgOrderChange > 0} />
+      <KpiCard label="AVG ORDER VALUE" value="₹{data.avgOrderValue}" trend="{Math.abs(data.avgOrderChange)}%" trendUp={data.avgOrderChange > 0} />
       <KpiCard label="CUSTOMERS SERVED" value={String(data.customersServed)} trend="{data.customersChange}%" trendUp={data.customersChange > 0} />
     </div>
 
@@ -66,7 +66,7 @@
           {#each data.topItems || [] as item}
             <div class="top-item-row">
               <span class="rank">#{item.rank}</span>
-              <div class="top-item-info"><p class="top-item-name">{item.name}</p><p class="top-item-sub">{item.unitsSold} sold · €{item.revenue}</p></div>
+              <div class="top-item-info"><p class="top-item-name">{item.name}</p><p class="top-item-sub">{item.unitsSold} sold · ₹{item.revenue}</p></div>
               <span class="top-item-growth" class:positive={item.growth > 0}>↑{item.growth}%</span>
             </div>
           {/each}

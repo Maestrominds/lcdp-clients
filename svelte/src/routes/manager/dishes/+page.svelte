@@ -143,7 +143,7 @@
                 {#if dish.soldOut}<span class="sold-out-badge">Sold Out</span>{/if}
               </td>
               <td class="muted">{dish.category || '—'}</td>
-              <td class="fw500">€{dish.price.toFixed(2)}</td>
+              <td class="fw500">₹{dish.price.toFixed(2)}</td>
               <td class="muted">
                 {#if dish.ingredients && dish.ingredients.length > 0}
                   <ul class="ing-list">
@@ -188,7 +188,7 @@
       
       <div class="form-row">
         <div><label class="field-label">Category</label><select bind:value={newItem.category}><option>starters</option><option>mains</option><option>sides</option><option>desserts</option><option>drinks</option></select></div>
-        <div><label class="field-label">Price (€)</label><input type="number" step="0.5" bind:value={newItem.price} /></div>
+        <div><label class="field-label">Price (₹)</label><input type="number" step="0.5" bind:value={newItem.price} /></div>
       </div>
       
       <div class="ingredients-section">

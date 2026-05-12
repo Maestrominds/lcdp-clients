@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/phone_login_screen.dart';
-import 'screens/main_navigation.dart';
+import 'screens/tables/tables_screen.dart';
 import 'services/api_service.dart';
 
 void main() {
@@ -35,7 +35,7 @@ class CafeDeParisApp extends StatelessWidget {
             return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primaryTeal)));
           }
           if (snapshot.data == true) {
-            return const MainNavigation();
+            return const TablesScreen();
           }
           return const PhoneLoginScreen();
         },

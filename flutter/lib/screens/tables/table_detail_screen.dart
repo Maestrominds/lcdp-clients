@@ -8,7 +8,6 @@ import '../../widgets/menu_item_card.dart';
 import '../../main.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// Screen 6 — Table Detail (Order Screen)
 class TableDetailScreen extends StatefulWidget {
   final TableModel table;
   const TableDetailScreen({super.key, required this.table});
@@ -19,7 +18,6 @@ class TableDetailScreen extends StatefulWidget {
 class _TableDetailScreenState extends State<TableDetailScreen> {
   List<models.MenuItem> _menuItems = [];
   final Map<String, int> _quantities = {};
-  // Keep a master cache of ALL items the user has ever seen/added, across categories
   final Map<String, models.MenuItem> _allItemsCache = {};
   bool _loading = true;
   bool _isSending = false;
@@ -28,22 +26,22 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
   final _categories = ['starters', 'mains', 'sides', 'drinks', 'desserts'];
 
   @override
-  void initState() { super.initState(); _loadMenu(); }
+  void initState() { 
+    super.initState(); 
+    _loadMenu(); 
+  }
 
   Future<void> _loadMenu() async {
     setState(() => _loading = true);
     try {
       final data = await ApiService().getMenu(_activeCategory);
-      if (!mounted) return;
       final items = (data as List).map<models.MenuItem>((m) => models.MenuItem.fromJson(m as Map<String, dynamic>)).toList();
-      // Cache every item we load
       for (final item in items) {
         _allItemsCache[item.id] = item;
       }
-      setState(() { _menuItems = items; _loading = false; });
+      if (mounted) setState(() { _menuItems = items; _loading = false; });
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -63,9 +61,7 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
     for (final entry in _quantities.entries) {
       if (entry.value > 0) {
         final item = _allItemsCache[entry.key];
-        if (item != null) {
-          result.add(MapEntry(item, entry.value));
-        }
+        if (item != null) result.add(MapEntry(item, entry.value));
       }
     }
     return result;
@@ -84,42 +80,21 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
   Future<void> _sendToKitchen() async {
     if (_isSending) return;
     setState(() => _isSending = true);
-    
     final navigator = Navigator.of(context);
-
     try {
       final itemsList = <Map<String, dynamic>>[];
       for (final entry in _cartItems) {
-        itemsList.add({'menuItemId': entry.key.id, 'quantity': entry.value});
+        itemsList.add({'id': entry.key.id, 'quantity': entry.value});
       }
-      
-      debugPrint('[DEBUG] Order data: $itemsList');
-      
-      // Call api service directly
       await ApiService().sendToKitchen(widget.table.id, itemsList);
-      
-      debugPrint('[DEBUG] Order sent successfully!');
-      
       if (!mounted) return;
-      setState(() {
-        _quantities.clear();
-        _isSending = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Order sent to kitchen!'), backgroundColor: AppColors.successGreen)
-      );
-      
+      setState(() { _quantities.clear(); _isSending = false; });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Order sent to kitchen!'), backgroundColor: AppColors.successGreen));
       navigator.pop();
-    } catch (e, stackTrace) {
-      debugPrint('[ERROR] _sendToKitchen failed: $e');
-      debugPrint('[ERROR] StackTrace: $stackTrace');
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isSending = false);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.errorRed)
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.errorRed));
     }
   }
 
@@ -132,7 +107,7 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
           icon: const FaIcon(FontAwesomeIcons.chevronLeft, color: AppColors.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(widget.table.name),
+        title: Text(widget.table.name, style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
       ),
       body: Column(
         children: [
@@ -205,7 +180,7 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(widget.table.name, style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-          Text('€${_totalPrice.toStringAsFixed(2)}', style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primaryTeal)),
+          Text('₹${_totalPrice.toStringAsFixed(2)}', style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primaryTeal)),
         ]),
         const SizedBox(height: 4),
         Text('$_totalItems Items', style: GoogleFonts.dmSans(fontSize: 13, color: AppColors.textSecondary)),
@@ -216,7 +191,7 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(children: [
             Expanded(child: Text('${e.value} x ${e.key.name}', style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
-            Text('€${(e.key.price * e.value).toStringAsFixed(2)}', style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            Text('₹${(e.key.price * e.value).toStringAsFixed(2)}', style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             const SizedBox(width: 12),
             GestureDetector(
               onTap: () => _updateQty(e.key.id, 0),
@@ -256,3 +231,4 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
     );
   }
 }
+

@@ -21,6 +21,7 @@ class Order {
   final String id;
   final String tableId;
   final String tableName;
+  final String menuItemId; // Added this
   final OrderStatus status;
   final List<OrderItem> items;
   final DateTime createdAt;
@@ -29,6 +30,7 @@ class Order {
     required this.id,
     required this.tableId,
     required this.tableName,
+    required this.menuItemId, // Added this
     required this.status,
     required this.items,
     required this.createdAt,
@@ -37,25 +39,31 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) {
     final statusStr = json['status'] as String? ?? 'new';
     OrderStatus status;
-    switch (statusStr) {
+    switch (statusStr.toLowerCase()) {
       case 'new': status = OrderStatus.newOrder; break;
       case 'preparing': status = OrderStatus.preparing; break;
       case 'ready': case 'ready_to_serve': status = OrderStatus.ready; break;
-      case 'served': status = OrderStatus.served; break;
+      case 'served': case 'eating': status = OrderStatus.served; break;
       case 'awaiting_payment': status = OrderStatus.awaitingPayment; break;
       default: status = OrderStatus.preparing;
     }
 
-    final itemsList = json['items'] as List? ?? [];
+    final menuItemName = json['menu_item'] as String? ?? 'Unknown Item';
+    final quantity = json['quantity'] as int? ?? 1;
+    final tableNum = json['table_number']?.toString() ?? '0';
+    final mId = json['menu_item_id']?.toString() ?? ''; // Extract this
+
     return Order(
       id: json['id']?.toString() ?? '',
-      tableId: json['tableId']?.toString() ?? '',
-      tableName: json['tableName'] as String? ?? 'Table',
+      tableId: tableNum,
+      tableName: 'Table $tableNum',
+      menuItemId: mId, // Map this
       status: status,
-      items: itemsList.map((i) => OrderItem.fromJson(i as Map<String, dynamic>)).toList(),
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      items: [OrderItem(name: menuItemName, quantity: quantity)],
+      createdAt: DateTime.tryParse(json['ordered_at'] ?? '') ?? DateTime.now(),
     );
   }
 
   String get itemsSummary => items.map((i) => '${i.quantity}× ${i.name}').join(', ');
 }
+

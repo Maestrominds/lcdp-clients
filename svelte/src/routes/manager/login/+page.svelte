@@ -1,105 +1,310 @@
 <script>
   import { goto } from '$app/navigation';
-  import { login } from '$lib/stores/auth.js';
   import { api } from '$lib/api.js';
+  import { login } from '$lib/stores/auth.js';
 
-  let email = $state('');
-  let password = $state('');
-  let isLoading = $state(false);
+  let phone = $state('');
+  let otp = $state('');
+  let step = $state('phone'); // 'phone' | 'otp'
+  let loading = $state(false);
   let error = $state('');
+  let otpStatus = $state(''); // 'sent' | 'otp_unavailable'
 
-  async function handleLogin() {
-    if (!email || !password) { error = 'Please enter both email and password'; return; }
-    isLoading = true;
-    error = '';
+  const ROLE = 'manager';
+
+  async function requestOTP() {
+    const cleaned = phone.trim().replace(/\s/g, '');
+    if (!cleaned) { error = 'Please enter your phone number'; return; }
+    loading = true; error = '';
     try {
-      await api.managerLogin(email, password);
-      login();
-      goto('/manager/dashboard');
+      const res = await api.kitchenRequestOTP(cleaned, ROLE);
+      otpStatus = res?.status ?? 'sent';
+      step = 'otp';
     } catch (e) {
-      error = 'Invalid credentials. Please try again.';
+      error = 'Unauthorized access. Please ensure you are registered as a Manager.';
     } finally {
-      isLoading = false;
+      loading = false;
     }
   }
+
+  async function verifyOTP() {
+    const cleaned = phone.trim().replace(/\s/g, '');
+    if (!otp.trim()) { error = 'Please enter the 6-digit OTP'; return; }
+    loading = true; error = '';
+    try {
+      const res = await api.kitchenVerifyOTP(cleaned, otp.trim());
+      login(res.user);
+      goto('/manager/dashboard');
+    } catch (e) {
+      error = 'Invalid or expired OTP. Please try again.';
+    } finally {
+      loading = false;
+    }
+  }
+
+  function handlePhoneKey(e) { if (e.key === 'Enter') requestOTP(); }
+  function handleOTPKey(e)   { if (e.key === 'Enter') verifyOTP(); }
+  function goBack() { step = 'phone'; otp = ''; error = ''; }
 </script>
 
-<svelte:head><title>Manager Login — Cafe De Paris</title></svelte:head>
+<svelte:head>
+  <title>Manager Login — Cafe De Paris</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</svelte:head>
 
 <div class="login-page">
   <div class="login-left">
-    <div class="login-brand-card">
-      <div class="brand-card-inner">
-        <div class="brand-logo">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
-        </div>
-        <h1>Cafe De Paris</h1>
+    <div class="brand-showcase">
+      <div class="logo-box">
+        <img src="/app_icon.png" alt="App Icon" />
       </div>
-      <h2 class="portal-title">Manager Portal</h2>
-      <p class="brand-tagline">Streamline your inventory, automate bill processing, and maintain complete control over your café operations.</p>
+      <h1 class="brand-name">Cafe De Paris</h1>
+      <p class="brand-tagline">Manager Operations Portal</p>
+      
+      <div class="visual-features">
+        <div class="v-feature">
+          <div class="v-dot"></div>
+          <span>Real-time Inventory Tracking</span>
+        </div>
+        <div class="v-feature">
+          <div class="v-dot"></div>
+          <span>Automated Bill Processing</span>
+        </div>
+        <div class="v-feature">
+          <div class="v-dot"></div>
+          <span>Menu & Dish Management</span>
+        </div>
+      </div>
     </div>
   </div>
+
   <div class="login-right">
-    <div class="login-form-card">
-      <h2>Welcome Back</h2>
-      <p class="form-subtitle">Sign in to your manager account</p>
-
-      {#if error}
-        <div class="error-msg">{error}</div>
-      {/if}
-
-      <form onsubmit={(e) => { e.preventDefault(); handleLogin(); }}>
-        <label class="field-label">Email</label>
-        <input type="email" bind:value={email} placeholder="manager@cafedeparis.com" />
-
-        <div class="password-row">
-          <label class="field-label">Password</label>
-          <a href="#!" class="forgot-link">Forgot password?</a>
+    <div class="auth-card">
+      {#if step === 'phone'}
+        <div class="auth-header">
+          <div class="portal-badge">MANAGER ACCESS</div>
+          <h2>Operational Login</h2>
+          <p>Sign in to manage your café operations</p>
         </div>
-        <input type="password" bind:value={password} placeholder="Enter your password" />
 
-        <button class="btn btn-primary login-btn" type="submit" disabled={isLoading}>
-          {isLoading ? 'Signing In...' : 'Sign In'}
+        {#if error}
+          <div class="error-msg">{error}</div>
+        {:else}
+           <div class="info-msg">Please enter your registered mobile number</div>
+        {/if}
+
+        <div class="field-group">
+          <label for="phone">Phone Number</label>
+          <div class="input-wrapper">
+            <span class="prefix">+91</span>
+            <input 
+              id="phone"
+              type="tel" 
+              bind:value={phone} 
+              placeholder="98765 43210" 
+              onkeydown={handlePhoneKey}
+              autofocus 
+            />
+          </div>
+        </div>
+
+        <button class="primary-btn" onclick={requestOTP} disabled={loading}>
+          {#if loading}
+            <span class="loader"></span> Sending...
+          {:else}
+            Continue
+          {/if}
         </button>
-      </form>
-      <p class="secure-note">Secure enterprise-grade access for De Paris management.</p>
+      {:else}
+        <div class="auth-header">
+          <button class="mini-back" onclick={goBack}>← Change Number</button>
+          <h2>Verify Identity</h2>
+          <p>Enter the 6-digit code sent to <strong>+91 {phone}</strong></p>
+        </div>
+
+        {#if error}
+          <div class="error-msg">{error}</div>
+        {/if}
+
+        <div class="field-group">
+          <label for="otp">Security Code</label>
+          <input 
+            id="otp"
+            type="text" 
+            inputmode="numeric"
+            maxlength="6"
+            bind:value={otp} 
+            placeholder="000000" 
+            class="otp-input"
+            onkeydown={handleOTPKey}
+            autofocus 
+          />
+          {#if otpStatus === 'otp_unavailable'}
+            <p class="otp-hint">Debug Mode: Enter any 6 digits to bypass OTP</p>
+          {/if}
+        </div>
+
+        <button class="primary-btn" onclick={verifyOTP} disabled={loading}>
+          {#if loading}
+            <span class="loader"></span> Verifying...
+          {:else}
+            Verify & Sign In
+          {/if}
+        </button>
+      {/if}
+      
+      <p class="safety-note">Secure access for authorized Managers only.</p>
     </div>
   </div>
 </div>
 
 <style>
-  .login-page { display: flex; min-height: 100vh; }
+  :global(body) {
+    margin: 0; padding: 0;
+    font-family: 'Outfit', sans-serif;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+
+  .login-page {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── LEFT SIDE ── */
   .login-left {
-    flex: 0 0 48%; background: var(--primary-teal);
-    display: flex; align-items: center; justify-content: center; padding: 40px;
+    flex: 0 0 45%;
+    background: #1e5f74;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+    overflow: hidden;
   }
-  .login-brand-card { text-align: center; color: #fff; max-width: 340px; }
-  .brand-card-inner {
-    background: rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; margin-bottom: 24px;
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  .login-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 70% 30%, rgba(201,168,76,0.15), transparent 70%);
   }
-  .brand-logo {
-    width: 64px; height: 64px; background: rgba(255,255,255,0.15); border-radius: 16px;
-    display: flex; align-items: center; justify-content: center; color: #fff;
+
+  .brand-showcase {
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    max-width: 400px;
   }
-  .brand-card-inner h1 { font-family: var(--font-display); font-size: 24px; }
-  .portal-title { font-family: var(--font-body); font-size: 20px; font-weight: 600; margin-bottom: 12px; }
-  .brand-tagline { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.7; }
+
+  .logo-box {
+    width: 64px; height: 64px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 2rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+
+  .brand-name { font-size: 2.5rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
+  .brand-tagline { font-size: 1.125rem; color: rgba(255,255,255,0.7); margin: 0.5rem 0 3rem; font-weight: 500; }
+
+  .visual-features { display: flex; flex-direction: column; gap: 1.5rem; }
+  .v-feature { display: flex; align-items: center; gap: 1rem; font-size: 0.95rem; color: rgba(255,255,255,0.9); }
+  .v-dot { width: 8px; height: 8px; background: #c9a84c; border-radius: 50%; }
+
+  /* ── RIGHT SIDE ── */
   .login-right {
-    flex: 1; background: var(--background);
-    display: flex; align-items: center; justify-content: center; padding: 40px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #f8fafc;
   }
-  .login-form-card {
-    background: var(--card-surface); border-radius: 16px; box-shadow: var(--card-shadow);
-    border: 1px solid var(--border); padding: 36px; width: 100%; max-width: 380px;
+
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 3rem;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
   }
-  .login-form-card h2 { font-family: var(--font-display); font-size: 22px; margin-bottom: 4px; }
-  .form-subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }
-  .field-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-primary); margin: 16px 0 6px; }
-  .password-row { display: flex; justify-content: space-between; align-items: center; }
-  .forgot-link { font-size: 12px; color: var(--primary-teal); }
-  .login-form-card input { width: 100%; }
-  .login-btn { width: 100%; margin-top: 24px; padding: 12px; font-size: 15px; border-radius: 12px; }
-  .secure-note { text-align: center; font-size: 11px; color: var(--text-secondary); margin-top: 20px; }
-  .error-msg { background: var(--critical-bg); color: var(--critical-text); padding: 10px 14px; border-radius: var(--button-radius); font-size: 13px; margin-bottom: 8px; }
+
+  .auth-header { margin-bottom: 2.5rem; text-align: center; position: relative; }
+  .portal-badge {
+    display: inline-block;
+    background: rgba(30,95,116,0.1);
+    color: #1e5f74;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: 0.5px;
+  }
+  .auth-header h2 { font-size: 1.75rem; font-weight: 800; margin: 0 0 0.5rem; color: #0f172a; }
+  .auth-header p { font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.5; }
+  .auth-header p strong { color: #1e5f74; font-weight: 600; }
+
+  .mini-back {
+    background: none; border: none; color: #1e5f74; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; margin-bottom: 1.5rem; padding: 0; opacity: 0.7; transition: 0.2s;
+  }
+  .mini-back:hover { opacity: 1; }
+
+  .error-msg {
+    background: #fef2f2; border: 1px solid #fee2e2; color: #991b1b;
+    padding: 1rem; border-radius: 12px; font-size: 0.875rem; margin-bottom: 1.5rem;
+    line-height: 1.4;
+  }
+  .info-msg { background: #f0f9ff; border: 1px solid #e0f2fe; color: #0369a1; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+  .field-group { margin-bottom: 1.5rem; }
+  .field-group label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem; }
+
+  .input-wrapper {
+    display: flex; align-items: center; gap: 0.75rem;
+    background: #f1f5f9; border: 1.5px solid #e2e8f0; border-radius: 12px;
+    padding: 0 1rem; transition: all 0.2s;
+  }
+  .input-wrapper:focus-within { border-color: #1e5f74; background: #fff; box-shadow: 0 0 0 4px rgba(30,95,116,0.1); }
+  .prefix { font-weight: 700; color: #64748b; font-size: 0.95rem; }
+
+  input {
+    width: 100%; padding: 1rem 0; border: none; background: transparent;
+    font-family: inherit; font-size: 1rem; font-weight: 600; color: #0f172a; outline: none;
+  }
+  input::placeholder { color: #94a3b8; font-weight: 400; }
+
+  .otp-input {
+    background: #f1f5f9; border: 1.5px solid #e2e8f0; border-radius: 12px;
+    padding: 1rem; text-align: center; letter-spacing: 0.5rem; font-size: 1.5rem;
+    font-weight: 800; color: #1e5f74;
+  }
+  .otp-input:focus { border-color: #1e5f74; background: #fff; box-shadow: 0 0 0 4px rgba(30,95,116,0.1); }
+  .otp-hint { font-size: 0.75rem; color: #f59e0b; margin-top: 0.5rem; text-align: center; font-weight: 500; }
+
+  .primary-btn {
+    width: 100%; padding: 1rem; border-radius: 12px; border: none;
+    background: #1e5f74; color: #fff; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(30,95,116,0.2);
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+  }
+  .primary-btn:hover:not(:disabled) { background: #164a5c; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(30,95,116,0.3); }
+  .primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+  .loader {
+    width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .safety-note { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 2rem; }
+
+  @media (max-width: 900px) {
+    .login-left { display: none; }
+  }
 </style>

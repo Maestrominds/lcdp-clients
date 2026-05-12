@@ -3,12 +3,13 @@
  * All API calls go through this module.
  */
 
-const BASE_URL = '/api/v1';
+const BASE_URL = '/api';
 
 const authHeaders = () => ({
   'Content-Type': 'application/json'
 });
 
+// Standard handler — redirects to login on 401 (for manager/owner pages)
 const handle = async (res) => {
   if (res.status === 401) {
     if (typeof window !== 'undefined') window.location.href = '/manager/login';
@@ -19,10 +20,28 @@ const handle = async (res) => {
   return text ? JSON.parse(text) : null;
 };
 
-const get   = (path) => fetch(`${BASE_URL}${path}`, { headers: authHeaders(), credentials: 'include' }).then(handle);
-const post  = (path, body) => fetch(`${BASE_URL}${path}`, { method: 'POST',  headers: authHeaders(), body: JSON.stringify(body), credentials: 'include' }).then(handle);
-const patch = (path, body) => fetch(`${BASE_URL}${path}`, { method: 'PATCH', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined, credentials: 'include' }).then(handle);
-const del   = (path) => fetch(`${BASE_URL}${path}`, { method: 'DELETE', headers: authHeaders(), credentials: 'include' }).then(handle);
+// Kitchen handler — does NOT redirect on 401, throws a typed error instead
+const kitchenHandle = async (res) => {
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') window.location.href = '/kitchen/login';
+    const err = new Error('Unauthorized — redirecting to kitchen login');
+    err.code = 'AUTH_REQUIRED';
+    throw err;
+  }
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+};
+
+const get      = (path) => fetch(`${BASE_URL}${path}`, { headers: authHeaders(), credentials: 'include' }).then(handle);
+const post     = (path, body) => fetch(`${BASE_URL}${path}`, { method: 'POST',  headers: authHeaders(), body: JSON.stringify(body), credentials: 'include' }).then(handle);
+const patch    = (path, body) => fetch(`${BASE_URL}${path}`, { method: 'PATCH', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined, credentials: 'include' }).then(handle);
+const del      = (path) => fetch(`${BASE_URL}${path}`, { method: 'DELETE', headers: authHeaders(), credentials: 'include' }).then(handle);
+// Kitchen uses session cookie (staff logs in via /kitchen/login) but redirects to /kitchen/login on 401
+const kitchenGet   = (path) => fetch(`${BASE_URL}${path}`, { headers: authHeaders(), credentials: 'include' }).then(kitchenHandle);
+const kitchenPatch = (path, body) => fetch(`${BASE_URL}${path}`, { method: 'PATCH', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined, credentials: 'include' }).then(kitchenHandle);
+// Public (no-cookie) for OTP auth endpoints
+const pub = (path, body) => fetch(`${BASE_URL}${path}`, { method: body ? 'POST' : 'GET', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined }).then(async res => { if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`); const t = await res.text(); return t ? JSON.parse(t) : null; });
 
 export const api = {
   // Auth
@@ -31,18 +50,18 @@ export const api = {
   logout:               () => { /* Browser handles cookies, but we could call a logout endpoint */ },
 
   // Tables (CRUD)
-  getTables:            () => get('/tables'),
-  getTable:             (id) => get(`/tables/${id}`),
-  createTable:          (table) => post('/tables', table),
-  updateTable:          (id, data) => patch(`/tables/${id}`, data),
-  deleteTable:          (id) => del(`/tables/${id}`),
-  updateTableStatus:    (id, status) => patch(`/tables/${id}/status`, { status }),
+  getTables:            () => get('/dining-tables'),
+  getTable:             (id) => get(`/dining-tables/${id}`),
+  createTable:          (table) => post('/dining-tables', table),
+  updateTable:          (id, data) => patch(`/dining-tables/${id}`, data),
+  deleteTable:          (id) => del(`/dining-tables/${id}`),
+  updateTableStatus:    (id, status) => patch(`/dining-tables/${id}/status`, { status }),
 
   // Menu
-  getMenu:              (category) => get(`/menu${category ? '?category=' + category : ''}`),
-  addDish:              (dish) => post('/menu', dish),
-  updateDish:           (id, data) => patch(`/menu/${id}`, data),
-  deleteDish:           (id) => del(`/menu/${id}`),
+  getMenu:              (category) => get(`/menu-items${category ? '?category=' + category : ''}`),
+  addDish:              (dish) => post('/menu-items', dish),
+  updateDish:           (id, data) => patch(`/menu-items/${id}`, data),
+  deleteDish:           (id) => del(`/menu-items/${id}`),
 
   // Orders
   getOrders:            () => get('/orders'),
@@ -50,18 +69,18 @@ export const api = {
   markServed:           (id) => patch(`/orders/${encodeURIComponent(id)}/served`),
 
   // Inventory
-  getInventory:         () => get('/inventory'),
-  addInventoryItem:     (item) => post('/inventory', item),
-  updateInventoryItem:  (id, data) => patch(`/inventory/${id}`, data),
-  deleteInventoryItem:  (id) => del(`/inventory/${id}`),
+  getInventory:         () => get('/inventory-items'),
+  addInventoryItem:     (item) => post('/inventory-items', item),
+  updateInventoryItem:  (id, data) => patch(`/inventory-items/${id}`, data),
+  deleteInventoryItem:  (id) => del(`/inventory-items/${id}`),
 
   // Bills
   scanBill:             (imageBase64, mimeType) => post('/bills/scan', { image: imageBase64, mimeType }),
   confirmBill:          (billData) => post('/bills/confirm', billData),
 
-  // Payables
-  getPayables:          () => get('/payables'),
-  markPaid:             (id) => patch(`/payables/${id}/paid`),
+  // Payables (Mapped to Bills in backend)
+  getPayables:          () => get('/bills'),
+  markPaid:             (id, billData) => patch(`/bills/${id}`, { ...billData, status: 'paid' }),
 
   // Vendors
   getVendors:           () => get('/vendors'),
@@ -72,10 +91,10 @@ export const api = {
   getAlerts:            () => get('/alerts'),
   markAlertRead:        (id) => patch(`/alerts/${id}/read`),
 
-  // Waiters
-  getWaiters:           () => get('/waiters'),
-  addWaiter:            (waiter) => post('/waiters', waiter),
-  deleteWaiter:         (id) => del(`/waiters/${id}`),
+  // Staff/Waiters (Mapped to /users in backend)
+  getWaiters:           () => get('/users'),
+  addWaiter:            (waiter) => post('/users', waiter),
+  deleteWaiter:         (id) => del(`/users/${id}`),
 
   // Analytics (owner)
   getOverview:          (date) => get(`/analytics/overview${date ? '?date=' + date : ''}`),
@@ -87,10 +106,32 @@ export const api = {
   getReports:           () => get('/reports'),
   downloadReport:       (id) => get(`/reports/${id}/download`),
 
-  // Kitchen
-  getKitchenOrders:     () => get('/kitchen/orders'),
-  startOrder:           (id) => patch(`/kitchen/orders/${encodeURIComponent(id)}/start`),
-  readyOrder:           (id) => patch(`/kitchen/orders/${encodeURIComponent(id)}/ready`),
+  // Kitchen Auth (uses existing /login & /login/verify — NO backend changes needed)
+  kitchenRequestOTP: (phone, role) => {
+    const params = new URLSearchParams({ phone, role });
+    return fetch(`${BASE_URL}/login?${params}`, { headers: authHeaders() })
+      .then(async res => { if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`); return res.json(); });
+  },
+  kitchenVerifyOTP: (phone, otp) =>
+    fetch(`${BASE_URL}/login/verify`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ phone, otp }),
+      credentials: 'include'  // receive session cookie
+    }).then(async res => {
+      if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+      localStorage.setItem('kitchen_logged_in', 'true');
+      return res.json();
+    }),
+  kitchenLogout: () => {
+    localStorage.removeItem('kitchen_logged_in');
+    if (typeof window !== 'undefined') window.location.href = '/kitchen/login';
+  },
+
+  // Kitchen Display (protected by session cookie after login above)
+  getKitchenOrders:     () => kitchenGet('/orders'),
+  getKitchenTables:     () => kitchenGet('/dining-tables'),
+  kitchenStartPreparing:(tableId) => kitchenPatch(`/dining-tables/${tableId}/status`, { status: 'preparing' }),
+  kitchenMarkReady:     (tableId) => kitchenPatch(`/dining-tables/${tableId}/status`, { status: 'eating' }),
 
   // Settings & Actions
   updateProfile:        (data) => patch('/settings/profile', data),

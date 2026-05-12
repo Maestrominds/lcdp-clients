@@ -70,7 +70,7 @@
               <td><input type="text" bind:value={extractedItems[i].name} /></td>
               <td><input type="number" bind:value={extractedItems[i].quantity} style="width:80px" /></td>
               <td>{item.unit}</td>
-              <td>€{item.price?.toFixed(2)}</td>
+              <td>₹{item.price?.toFixed(2)}</td>
               <td>{item.vendor}</td>
             </tr>
           {/each}

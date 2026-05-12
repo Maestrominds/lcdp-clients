@@ -14,8 +14,11 @@
   const totalPending = $derived(pending.reduce((s, p) => s + p.amount, 0));
   const totalOverdue = $derived(overdue.reduce((s, p) => s + p.amount, 0));
 
-  async function markPaid(id) {
-    try { await api.markPaid(id); payables = payables.map(p => p.id === id ? {...p, status: 'paid'} : p); } catch(e) {}
+  async function markPaid(p) {
+    try { 
+      await api.markPaid(p.id, p); 
+      payables = payables.map(item => item.id === p.id ? {...item, status: 'paid'} : item); 
+    } catch(e) { alert('Failed to update: ' + e.message); }
   }
 </script>
 
@@ -26,9 +29,9 @@
   <p class="page-subtitle">Manage vendor invoices and payments</p>
 
   <div class="summary-row">
-    <div class="card summary-card"><p class="summary-label">Total Outstanding</p><p class="summary-value">€{totalOutstanding.toFixed(2)}</p></div>
-    <div class="card summary-card"><p class="summary-label">Pending</p><p class="summary-value" style="color:var(--warning-orange)">€{totalPending.toFixed(2)}</p></div>
-    <div class="card summary-card overdue-card"><p class="summary-label">Overdue</p><p class="summary-value">€{totalOverdue.toFixed(2)}</p></div>
+    <div class="card summary-card"><p class="summary-label">Total Outstanding</p><p class="summary-value">₹{totalOutstanding.toFixed(2)}</p></div>
+    <div class="card summary-card"><p class="summary-label">Pending</p><p class="summary-value" style="color:var(--warning-orange)">₹{totalPending.toFixed(2)}</p></div>
+    <div class="card summary-card overdue-card"><p class="summary-label">Overdue</p><p class="summary-value">₹{totalOverdue.toFixed(2)}</p></div>
   </div>
 
   {#if loading}
@@ -41,13 +44,13 @@
           {#each [...payables].sort((a,b) => a.status === 'overdue' ? -1 : 1) as p}
             <tr>
               <td class="fw500">{p.vendor}</td>
-              <td class="muted">{p.billReference}</td>
-              <td class="fw500">€{p.amount.toFixed(2)}</td>
-              <td style="color: {p.status === 'overdue' ? 'var(--error-red)' : 'inherit'}; font-weight: {p.status === 'overdue' ? '600' : '400'}">{p.dueDate}</td>
+              <td class="muted">{p.txn_id || p.txnId || '—'}</td>
+              <td class="fw500">₹{p.amount.toFixed(2)}</td>
+              <td style="color: {p.status === 'overdue' ? 'var(--error-red)' : 'inherit'}; font-weight: {p.status === 'overdue' ? '600' : '400'}">{p.due_date || p.dueDate}</td>
               <td><StatusBadge status={p.status} /></td>
               <td>
                 {#if p.status !== 'paid'}
-                  <button class="btn btn-primary btn-sm" onclick={() => markPaid(p.id)}>Mark Paid</button>
+                  <button class="btn btn-primary btn-sm" onclick={() => markPaid(p)}>Mark Paid</button>
                 {:else}
                   <span class="muted">—</span>
                 {/if}

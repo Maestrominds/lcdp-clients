@@ -15,7 +15,8 @@
   onMount(async () => {
     try {
       const [t, w] = await Promise.all([api.getTables(), api.getWaiters()]);
-      tables = t || []; waiters = w || [];
+      tables = t || []; 
+      waiters = (w || []).filter(u => u.role === 'waiter');
     } catch(e) {} finally { loading = false; }
     pollInterval = setInterval(async () => {
       try { tables = await api.getTables() || []; } catch(e) {}

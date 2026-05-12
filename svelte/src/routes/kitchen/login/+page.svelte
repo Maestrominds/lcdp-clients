@@ -1,7 +1,6 @@
 <script>
   import { goto } from '$app/navigation';
   import { api } from '$lib/api.js';
-  import { login } from '$lib/stores/auth.js';
 
   let phone = $state('');
   let otp = $state('');
@@ -10,7 +9,7 @@
   let error = $state('');
   let otpStatus = $state(''); // 'sent' | 'otp_unavailable'
 
-  const ROLE = 'admin';
+  const ROLE = 'waiter';
 
   async function requestOTP() {
     const cleaned = phone.trim().replace(/\s/g, '');
@@ -21,7 +20,7 @@
       otpStatus = res?.status ?? 'sent';
       step = 'otp';
     } catch (e) {
-      error = 'Unauthorized access. Please ensure you are registered as an Owner.';
+      error = 'Kitchen access denied. Please ensure your number is registered as Kitchen Staff.';
     } finally {
       loading = false;
     }
@@ -32,9 +31,8 @@
     if (!otp.trim()) { error = 'Please enter the 6-digit OTP'; return; }
     loading = true; error = '';
     try {
-      const res = await api.kitchenVerifyOTP(cleaned, otp.trim());
-      login(res.user);
-      goto('/owner/overview');
+      await api.kitchenVerifyOTP(cleaned, otp.trim());
+      goto('/kitchen/display');
     } catch (e) {
       error = 'Invalid or expired OTP. Please try again.';
     } finally {
@@ -48,7 +46,7 @@
 </script>
 
 <svelte:head>
-  <title>Owner Login — Cafe De Paris</title>
+  <title>Kitchen Login — Cafe De Paris</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </svelte:head>
 
@@ -59,20 +57,20 @@
         <img src="/app_icon.png" alt="App Icon" />
       </div>
       <h1 class="brand-name">Cafe De Paris</h1>
-      <p class="brand-tagline">Executive Administration Portal</p>
+      <p class="brand-tagline">Kitchen Display System</p>
       
       <div class="visual-features">
         <div class="v-feature">
           <div class="v-dot"></div>
-          <span>Comprehensive Sales Analytics</span>
+          <span>Real-time Order Processing</span>
         </div>
         <div class="v-feature">
           <div class="v-dot"></div>
-          <span>Revenue & Growth Monitoring</span>
+          <span>Live Order Timers</span>
         </div>
         <div class="v-feature">
           <div class="v-dot"></div>
-          <span>Total Business Oversight</span>
+          <span>Instant Status Updates</span>
         </div>
       </div>
     </div>
@@ -82,9 +80,9 @@
     <div class="auth-card">
       {#if step === 'phone'}
         <div class="auth-header">
-          <div class="portal-badge">OWNER ACCESS</div>
-          <h2>Welcome Back</h2>
-          <p>Sign in to your owner dashboard</p>
+          <div class="portal-badge">KITCHEN ACCESS</div>
+          <h2>Staff Login</h2>
+          <p>Access the kitchen display board</p>
         </div>
 
         {#if error}
@@ -99,7 +97,7 @@
               id="phone"
               type="tel" 
               bind:value={phone} 
-              placeholder="90010 00001" 
+              placeholder="98765 43210" 
               onkeydown={handlePhoneKey}
               autofocus 
             />
@@ -110,14 +108,14 @@
           {#if loading}
             <span class="loader"></span> Sending...
           {:else}
-            Continue
+            Access Kitchen →
           {/if}
         </button>
       {:else}
         <div class="auth-header">
           <button class="mini-back" onclick={goBack}>← Change Number</button>
-          <h2>Verify Identity</h2>
-          <p>Enter the 6-digit code sent to <strong>+91 {phone}</strong></p>
+          <h2>Verify Code</h2>
+          <p>Enter the 6-digit OTP sent to <strong>+91 {phone}</strong></p>
         </div>
 
         {#if error}
@@ -125,7 +123,7 @@
         {/if}
 
         <div class="field-group">
-          <label for="otp">Security Code</label>
+          <label for="otp">One-Time Password</label>
           <input 
             id="otp"
             type="text" 
@@ -138,7 +136,7 @@
             autofocus 
           />
           {#if otpStatus === 'otp_unavailable'}
-            <p class="otp-hint">Debug Mode: Enter any 6 digits to bypass OTP</p>
+            <p class="otp-hint">Debug Mode: Enter any code to continue</p>
           {/if}
         </div>
 
@@ -146,12 +144,12 @@
           {#if loading}
             <span class="loader"></span> Verifying...
           {:else}
-            Verify & Sign In
+            Verify & Open Board
           {/if}
         </button>
       {/if}
       
-      <p class="safety-note">Secure access for De Paris Owners only.</p>
+      <p class="safety-note">Kitchen session expires in 24 hours.</p>
     </div>
   </div>
 </div>
