@@ -188,12 +188,38 @@ class _TablesScreenState extends State<TablesScreen> {
       ),
       child: Row(
         children: [
-          if (table.status == TableStatus.ready || table.status == TableStatus.ordered || table.status == TableStatus.preparing)
+          if (table.status == TableStatus.ready)
             Expanded(
               child: _boutiqueButton('SERVE', AppColors.successGreen, () async {
                 await ApiService().updateTableStatus(table.id, 'eating');
                 _refreshData();
               }),
+            ),
+          if (table.status == TableStatus.ordered || table.status == TableStatus.preparing)
+            Expanded(
+              child: Container(
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.preparingBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.preparingText.withValues(alpha: 0.2)),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 10, height: 10,
+                      child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.preparingText.withValues(alpha: 0.5)),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'PREPARING',
+                      style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.preparingText, letterSpacing: 0.5),
+                    ),
+                  ],
+                ),
+              ),
             ),
           if (table.status == TableStatus.eating)
             Expanded(

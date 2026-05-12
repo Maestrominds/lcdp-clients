@@ -7,7 +7,7 @@ import 'client_stub.dart'
     if (dart.library.io) 'client_mobile.dart';
 
 /// API abstraction layer for Cafe De Paris.
-/// All API calls go through this singleton.
+///  All API calls go through this singleton.
 final String baseUrl = 'https://lcdp-server-production.up.railway.app';
 
 class ApiService {
@@ -35,14 +35,20 @@ class ApiService {
     final url = '$baseUrl$path';
     debugPrint('[API GET] $url');
     try {
-      final res = await _client.get(Uri.parse(url), headers: await _headers)
-          .timeout(const Duration(seconds: 45)); // Increased timeout for Render cold starts
-      
+      final res = await _client
+          .get(Uri.parse(url), headers: await _headers)
+          .timeout(
+            const Duration(seconds: 45),
+          ); // Increased timeout for Render cold starts
+
       debugPrint('[API GET SUCCESS] $url → Status: ${res.statusCode}');
       debugPrint('[API GET BODY] ${res.body}');
-      
+
       _updateCookie(res);
-      if (res.statusCode == 401) { await clearToken(); throw ApiException(401, 'Unauthorized'); }
+      if (res.statusCode == 401) {
+        await clearToken();
+        throw ApiException(401, 'Unauthorized');
+      }
       if (res.statusCode == 200) return jsonDecode(res.body);
       throw ApiException(res.statusCode, res.body);
     } catch (e) {
@@ -58,12 +64,17 @@ class ApiService {
     try {
       final headers = await _headers;
       debugPrint('[API POST] Headers: $headers');
-      final res = await _client.post(Uri.parse(url), headers: headers, body: bodyJson)
+      final res = await _client
+          .post(Uri.parse(url), headers: headers, body: bodyJson)
           .timeout(const Duration(seconds: 30));
       debugPrint('[API POST] $url → ${res.statusCode} body=${res.body}');
       _updateCookie(res);
-      if (res.statusCode == 401) { await clearToken(); throw ApiException(401, 'Unauthorized'); }
-      if (res.statusCode == 200 || res.statusCode == 201) return jsonDecode(res.body);
+      if (res.statusCode == 401) {
+        await clearToken();
+        throw ApiException(401, 'Unauthorized');
+      }
+      if (res.statusCode == 200 || res.statusCode == 201)
+        return jsonDecode(res.body);
       throw ApiException(res.statusCode, res.body);
     } catch (e) {
       debugPrint('[API POST ERROR] $url → $e');
@@ -73,13 +84,23 @@ class ApiService {
 
   Future<dynamic> patch(String path, [Map<String, dynamic>? body]) async {
     final url = '$baseUrl$path';
-    debugPrint('[API PATCH] $url body=${body != null ? jsonEncode(body) : "empty"}');
+    debugPrint(
+      '[API PATCH] $url body=${body != null ? jsonEncode(body) : "empty"}',
+    );
     try {
-      final res = await _client.patch(Uri.parse(url), headers: await _headers, body: body != null ? jsonEncode(body) : null)
+      final res = await _client
+          .patch(
+            Uri.parse(url),
+            headers: await _headers,
+            body: body != null ? jsonEncode(body) : null,
+          )
           .timeout(const Duration(seconds: 30));
       debugPrint('[API PATCH] $url → ${res.statusCode}');
       _updateCookie(res);
-      if (res.statusCode == 401) { await clearToken(); throw ApiException(401, 'Unauthorized'); }
+      if (res.statusCode == 401) {
+        await clearToken();
+        throw ApiException(401, 'Unauthorized');
+      }
       if (res.statusCode == 200) return jsonDecode(res.body);
       throw ApiException(res.statusCode, res.body);
     } catch (e) {
@@ -92,11 +113,15 @@ class ApiService {
     final url = '$baseUrl$path';
     debugPrint('[API DELETE] $url');
     try {
-      final res = await _client.delete(Uri.parse(url), headers: await _headers)
+      final res = await _client
+          .delete(Uri.parse(url), headers: await _headers)
           .timeout(const Duration(seconds: 30));
       debugPrint('[API DELETE] $url → ${res.statusCode}');
       _updateCookie(res);
-      if (res.statusCode == 401) { await clearToken(); throw ApiException(401, 'Unauthorized'); }
+      if (res.statusCode == 401) {
+        await clearToken();
+        throw ApiException(401, 'Unauthorized');
+      }
       if (res.statusCode == 200 || res.statusCode == 204) return null;
       throw ApiException(res.statusCode, res.body);
     } catch (e) {
@@ -110,12 +135,14 @@ class ApiService {
       await get('/login?phone=$phone&role=waiter') as Map<String, dynamic>;
 
   Future<Map<String, dynamic>> verifyOtp(String phone, String code) async =>
-      await post('/login/verify', {'phone': phone, 'otp': code}) as Map<String, dynamic>;
+      await post('/login/verify', {'phone': phone, 'otp': code})
+          as Map<String, dynamic>;
 
   void _updateCookie(http.Response response) {
     if (kIsWeb) return; // Browser handles cookies on Web
-    
-    String? rawCookie = response.headers['set-cookie'] ?? response.headers['Set-Cookie'];
+
+    String? rawCookie =
+        response.headers['set-cookie'] ?? response.headers['Set-Cookie'];
     if (rawCookie != null) {
       debugPrint('[DEBUG] Updating cookie from: $rawCookie');
       int index = rawCookie.indexOf(';');
@@ -124,8 +151,7 @@ class ApiService {
     }
   }
 
-  Future<void> clearToken() =>
-      _storage.delete(key: 'cdp_cookie');
+  Future<void> clearToken() => _storage.delete(key: 'cdp_cookie');
 
   Future<bool> isLoggedIn() async {
     if (kIsWeb) return true; // Assume logged in for now on Web dev
@@ -134,24 +160,32 @@ class ApiService {
 
   // Tables
   Future<List> getTables() async => await get('/dining-tables') as List;
-  Future<Map<String, dynamic>> getTable(String id) async => await get('/dining-tables/$id') as Map<String, dynamic>;
-  Future<dynamic> updateTableStatus(String id, String status) async => 
+  Future<Map<String, dynamic>> getTable(String id) async =>
+      await get('/dining-tables/$id') as Map<String, dynamic>;
+  Future<dynamic> updateTableStatus(String id, String status) async =>
       await patch('/dining-tables/$id/status', {'status': status});
 
   // Menu
   Future<List> getAllMenuItems() async => await get('/menu-items') as List;
 
   Future<List> getMenu([String? category]) async {
-    final path = category != null ? '/menu-items?category=$category' : '/menu-items';
+    final path = category != null
+        ? '/menu-items?category=$category'
+        : '/menu-items';
     return await get(path) as List;
   }
 
   // Orders
   Future<List> getOrders() async => await get('/orders') as List;
 
-  Future<void> sendToKitchen(String tableId, List<Map<String, dynamic>> items) async {
-    debugPrint('[API] Sending order for table $tableId with ${items.length} items');
-    
+  Future<void> sendToKitchen(
+    String tableId,
+    List<Map<String, dynamic>> items,
+  ) async {
+    debugPrint(
+      '[API] Sending order for table $tableId with ${items.length} items',
+    );
+
     // The backend expects individual OrderRequest objects: {menu_item_id, quantity, table_id}
     for (var item in items) {
       final orderData = {
@@ -166,8 +200,9 @@ class ApiService {
     await updateTableStatus(tableId, 'ordered');
   }
 
-  Future<dynamic> markServed(String orderId) async =>
-      await delete('/orders/$orderId'); // The backend uses DELETE for orders (Docs show delete, but no served endpoint)
+  Future<dynamic> markServed(String orderId) async => await delete(
+    '/orders/$orderId',
+  ); // The backend uses DELETE for orders (Docs show delete, but no served endpoint)
 }
 
 class ApiException implements Exception {

@@ -21,9 +21,8 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
   final Map<String, models.MenuItem> _allItemsCache = {};
   bool _loading = true;
   bool _isSending = false;
-  String _activeCategory = 'starters';
-
-  final _categories = ['starters', 'mains', 'sides', 'drinks', 'desserts'];
+  String _activeCategory = 'beverages';
+  final _categories = ['beverages', 'mains', 'desserts'];
 
   @override
   void initState() { 

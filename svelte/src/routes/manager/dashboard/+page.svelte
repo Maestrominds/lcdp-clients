@@ -15,7 +15,9 @@
   onMount(async () => {
     try {
       const [inv, pay, al] = await Promise.all([api.getInventory(), api.getPayables(), api.getAlerts()]);
-      inventory = inv || []; payables = pay || []; alerts = al || [];
+      const allowedCategories = ['pantry', 'dairy', 'beverages', 'produce', 'meat'];
+      inventory = (inv || []).filter(i => allowedCategories.includes(i.category?.toLowerCase()));
+      payables = pay || []; alerts = al || [];
     } catch (e) { error = e.message; } finally { loading = false; }
 
     await tick();

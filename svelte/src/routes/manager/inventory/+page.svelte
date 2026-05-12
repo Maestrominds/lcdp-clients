@@ -11,7 +11,7 @@
   let search = $state('');
   let showAddModal = $state(false);
   let editingId = $state(null);
-  let newItem = $state({ name: '', category: 'Pantry', quantity: 0, unit: 'kg', minStock: 10, vendor: '' });
+  let newItem = $state({ name: '', category: 'pantry', quantity: 0, unit: 'kg', minStock: 10, vendor: '' });
 
   onMount(async () => {
     const urlFilter = page.url?.searchParams?.get('filter');
@@ -30,8 +30,10 @@
     ok: inventory.filter(i => i.status === 'ok').length,
   });
 
+  const allowedCategories = ['pantry', 'dairy', 'beverages', 'produce', 'meat'];
   const filtered = $derived(() => {
-    let items = activeFilter === 'all' ? inventory : inventory.filter(i => i.status === activeFilter);
+    let items = inventory.filter(i => allowedCategories.includes(i.category?.toLowerCase()));
+    if (activeFilter !== 'all') items = items.filter(i => i.status === activeFilter);
     if (search) items = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
     return items;
   });
@@ -44,7 +46,7 @@
 
   function openAddModal() {
     editingId = null;
-    newItem = { name: '', category: 'Pantry', quantity: 0, unit: 'kg', minStock: 10, vendor: '' };
+    newItem = { name: '', category: 'pantry', quantity: 0, unit: 'kg', minStock: 10, vendor: '' };
     showAddModal = true;
   }
 
@@ -141,7 +143,13 @@
       <label class="field-label">Item Name</label>
       <input type="text" bind:value={newItem.name} placeholder="e.g. Olive Oil" />
       <label class="field-label">Category</label>
-      <select bind:value={newItem.category}><option>Pantry</option><option>Dairy</option><option>Meat</option><option>Seafood</option><option>Bakery</option><option>Beverages</option></select>
+      <select bind:value={newItem.category}>
+        <option value="pantry">Pantry</option>
+        <option value="dairy">Dairy</option>
+        <option value="beverages">Beverages</option>
+        <option value="produce">Produce</option>
+        <option value="meat">Meat</option>
+      </select>
       <div class="form-row">
         <div><label class="field-label">Quantity</label><input type="number" step="any" bind:value={newItem.quantity} /></div>
         <div><label class="field-label">Unit</label><select bind:value={newItem.unit}><option>kg</option><option>L</option><option>units</option></select></div>

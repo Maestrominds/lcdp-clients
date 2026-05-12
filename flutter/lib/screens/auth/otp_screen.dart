@@ -5,7 +5,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
-import '../main_navigation.dart';
+import '../tables/tables_screen.dart';
 
 /// Screen 2 — OTP Verification
 class OtpScreen extends StatefulWidget {
@@ -44,7 +44,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
       final token = result['token'] as String?;
       // Cookie is handled automatically by ApiService interceptor
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainNavigation()), (route) => false);
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const TablesScreen()), (route) => false);
     } catch (e) {
       if (!mounted) return;
       _shakeController.forward().then((_) => _shakeController.reset());
