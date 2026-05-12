@@ -48,7 +48,7 @@
             <p class="alert-title">{alert.title}</p>
             <p class="alert-desc">{alert.description}</p>
           </div>
-          <span class="alert-time">{new Date(alert.createdAt).toLocaleDateString()}</span>
+          <span class="alert-time">{new Date(alert.timestamp).toLocaleDateString()}</span>
         </button>
       {:else}
         <div class="empty-state"><p>No alerts</p></div>

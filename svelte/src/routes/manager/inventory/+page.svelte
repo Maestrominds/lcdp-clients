@@ -11,7 +11,7 @@
   let search = $state('');
   let showAddModal = $state(false);
   let editingId = $state(null);
-  let newItem = $state({ name: '', category: 'pantry', quantity: 0, unit: 'kg', minStock: 10, vendor: '' });
+  let newItem = $state({ name: '', category: 'pantry', quantity: 0, unit: 'kg', min_stock: 10, vendor: '' });
 
   onMount(async () => {
     const urlFilter = page.url?.searchParams?.get('filter');
@@ -46,7 +46,7 @@
 
   function openAddModal() {
     editingId = null;
-    newItem = { name: '', category: 'pantry', quantity: 0, unit: 'kg', minStock: 10, vendor: '' };
+    newItem = { name: '', category: 'pantry', quantity: 0, unit: 'kg', min_stock: 10, vendor: '' };
     showAddModal = true;
   }
 
@@ -112,7 +112,7 @@
               <td class="fw500">{item.name}</td>
               <td class="muted">{item.category || '—'}</td>
               <td style="color:{qtyColor(item)};font-weight:600">{item.quantity} {item.unit}</td>
-              <td class="muted">{item.minStock} {item.unit}</td>
+              <td class="muted">{item.min_stock} {item.unit}</td>
               <td><StatusBadge status={item.status} /></td>
               <td class="muted">{item.lastUpdated || '—'}</td>
               <td class="muted">{item.vendor || '—'}</td>
@@ -155,7 +155,7 @@
         <div><label class="field-label">Unit</label><select bind:value={newItem.unit}><option>kg</option><option>L</option><option>units</option></select></div>
       </div>
       <div class="form-row">
-        <div><label class="field-label">Min. Stock</label><input type="number" step="any" bind:value={newItem.minStock} /></div>
+        <div><label class="field-label">Min. Stock</label><input type="number" step="any" bind:value={newItem.min_stock} /></div>
         <div><label class="field-label">Vendor</label><input type="text" bind:value={newItem.vendor} placeholder="Vendor name" /></div>
       </div>
       <div class="modal-actions">

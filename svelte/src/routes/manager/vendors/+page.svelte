@@ -8,7 +8,16 @@
   let showAdd = $state(false);
   let newVendor = $state({ name: '', email: '', phone: '', address: '' });
 
-  onMount(async () => { try { vendors = await api.getVendors() || []; } catch(e) {} finally { loading = false; } });
+  onMount(async () => { 
+    try { 
+      const [v, b] = await Promise.all([api.getVendors(), api.getPayables()]);
+      const bills = b || [];
+      vendors = (v || []).map(vendor => ({
+        ...vendor,
+        bill_count: bills.filter(bill => bill.vendor === vendor.name).length
+      }));
+    } catch(e) {} finally { loading = false; } 
+  });
 
   const filtered = $derived(search ? vendors.filter(v => v.name.toLowerCase().includes(search.toLowerCase())) : vendors);
 
@@ -35,7 +44,7 @@
           <div class="vendor-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.68 2.36a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.76.32 1.55.55 2.36.68A2 2 0 0 1 22 16.92z"/></svg><span>{v.phone}</span></div>
           <div class="vendor-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>{v.address}</span></div>
           <div class="vendor-divider"></div>
-          <p class="vendor-bills">{v.billCount || 0} bills on record</p>
+          <p class="vendor-bills">{v.bill_count || 0} bills on record</p>
         </div>
       {:else}
         <p class="empty-cell">No vendors found</p>

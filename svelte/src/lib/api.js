@@ -87,6 +87,9 @@ export const api = {
   addVendor:            (vendor) => post('/vendors', vendor),
   updateVendor:         (id, data) => patch(`/vendors/${id}`, data),
 
+  // Ingredients
+  getIngredients:       () => get('/ingredients'),
+
   // Alerts
   getAlerts:            () => get('/alerts'),
   markAlertRead:        (id) => patch(`/alerts/${id}/read`),

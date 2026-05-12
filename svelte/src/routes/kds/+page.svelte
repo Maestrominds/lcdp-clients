@@ -82,11 +82,7 @@
       </div>
       <span class="brand-text">KITCHEN DISPLAY</span>
     </div>
-    <div class="kds-counters">
-      <span class="counter new-counter">{orderedOrders.length} Ordered</span>
-      <span class="counter prep-counter">{preparingOrders.length} Preparing</span>
-      <span class="counter ready-counter">{readyOrders.length} Ready</span>
-    </div>
+
     <div class="kds-right">
       <span class="connection-dot" class:connected class:disconnected={!connected}></span>
       <span class="conn-label">{connected ? 'Connected' : 'Disconnected'}</span>
@@ -189,7 +185,7 @@
 </div>
 
 <style>
-  .kds { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg, #FAF8F5); font-family: 'DM Sans', sans-serif; }
+  .kds { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg, #FAF8F5); font-family: 'DM Sans', sans-serif; color: #111827; }
 
   .kds-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: #fff; border-bottom: 1px solid #E5E7EB; flex-shrink: 0; }
   .kds-brand { display: flex; align-items: center; gap: 12px; }
@@ -204,7 +200,7 @@
   .connection-dot { width: 8px; height: 8px; border-radius: 50%; }
   .connection-dot.connected { background: #38A169; }
   .connection-dot.disconnected { background: #E53E3E; }
-  .conn-label { font-size: 13px; color: #6B7280; }
+  .conn-label { font-size: 13px; color: #374151; }
   .kds-clock { font-size: 16px; font-weight: 700; color: #1A1A1A; font-variant-numeric: tabular-nums; margin-left: 8px; }
   .loading-state { display: flex; align-items: center; justify-content: center; flex: 1; color: #6B7280; font-size: 16px; }
 
@@ -227,13 +223,13 @@
   .order-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .order-id { font-weight: 800; font-size: 18px; color: #1A1A1A; }
   .order-timer { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 4px; }
-  .order-table { font-size: 14px; color: #6B7280; margin: 0 0 14px 0; font-weight: 500; }
+  .order-table { font-size: 14px; color: #374151; margin: 0 0 14px 0; font-weight: 600; }
 
   .order-items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
   .item-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
   .item-row:last-child { border-bottom: none; }
-  .item-name { color: #1A1A1A; font-weight: 500; }
-  .item-qty { color: #6B7280; font-weight: 600; }
+  .item-name { color: #1A1A1A; font-weight: 600; }
+  .item-qty { color: #111827; font-weight: 700; }
 
   .action-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all 0.15s ease; }
   .start-btn { background: #1E5F74; color: #fff; }

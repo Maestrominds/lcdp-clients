@@ -18,9 +18,16 @@
 
   async function loadData() {
     try {
-      const [m, inv] = await Promise.all([api.getMenu(), api.getInventory()]);
-      dishes = m || [];
+      const [m, inv, ing] = await Promise.all([api.getMenu(), api.getInventory(), api.getIngredients()]);
+      const ingredients = ing || [];
       inventory = inv || [];
+      dishes = (m || []).map(dish => ({
+        ...dish,
+        ingredients: ingredients.filter(i => i.menu_item === dish.name).map(i => {
+          const invItem = inventory.find(inv => inv.name === i.inventory_item);
+          return { ...i, unit: invItem?.unit || '' };
+        })
+      }));
     } catch (e) { error = e.message; } finally { loading = false; }
   }
 
@@ -68,7 +75,7 @@
       let selUnit = ing.unit;
       if (ing.inventory_item_unit === 'kg' && q < 1) { q = q * 1000; selUnit = 'g'; }
       if (ing.inventory_item_unit === 'L' && q < 1) { q = q * 1000; selUnit = 'ml'; }
-      return { inventoryId: ing.inventory_item_id, quantity: q, unit: ing.inventory_item_unit, selectedUnit: selUnit };
+      return { inventoryId: ing.inventory_item_id, quantity: q, unit: ing.inventory_item_unit || ing.unit, selectedUnit: selUnit };
     });
     newItem = { ...dish, ingredients: formattedIngredients };
     showAddModal = true;
@@ -82,7 +89,7 @@
           let finalQty = ing.quantity;
           if (ing.unit === 'kg' && ing.selectedUnit === 'g') finalQty = ing.quantity / 1000;
           if (ing.unit === 'L' && ing.selectedUnit === 'ml') finalQty = ing.quantity / 1000;
-          return { inventoryId: ing.inventoryId, quantity: finalQty };
+          return { inventory_item_id: ing.inventoryId, quantity: finalQty };
         })
       };
       
@@ -148,7 +155,7 @@
                 {#if dish.ingredients && dish.ingredients.length > 0}
                   <ul class="ing-list">
                     {#each dish.ingredients as ing}
-                      <li>{ing.inventory_item_name} ({ing.quantity} {ing.inventory_item_unit})</li>
+                      <li>{ing.inventory_item || ing.inventory_item_name} ({ing.quantity} {ing.inventory_item_unit || ing.unit || ''})</li>
                     {/each}
                   </ul>
                 {:else}
