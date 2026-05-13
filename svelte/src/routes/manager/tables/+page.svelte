@@ -8,7 +8,7 @@
   let loading = $state(true);
   let showAddTable = $state(false);
   let showAddWaiter = $state(false);
-  let newTable = $state({ name: '', seats: 4 });
+  let newTable = $state({ number: '' });
   let newWaiter = $state({ name: '', phone: '' });
   let pollInterval;
 
@@ -27,11 +27,10 @@
 
   async function addTable() {
     try { 
-      // Ensure number is parsed if possible, or leave it to backend
-      await api.createTable(newTable); 
+      await api.createTable({ number: parseInt(newTable.number), status: 'available' }); 
       tables = await api.getTables() || []; 
       showAddTable = false; 
-      newTable = { name: '', seats: 4 }; 
+      newTable = { number: '' }; 
     } catch(e) { alert('Failed to add table: ' + e.message); }
   }
   async function deleteTable(id) {
@@ -64,9 +63,13 @@
       <div class="table-grid">
         {#each tables as t}
           <div class="card table-card">
-            <div class="table-top"><h3>{t.name}</h3><button class="del-btn" onclick={() => deleteTable(t.id)}>×</button></div>
-            <p class="muted">{t.seats} seats</p>
-            <StatusBadge status={t.status} />
+            <div class="table-top">
+              <div class="table-info">
+                <span class="table-number">Table {t.number}</span>
+                <StatusBadge status={t.status} />
+              </div>
+              <button class="del-btn" onclick={() => deleteTable(t.id)}>×</button>
+            </div>
             
             <div class="table-actions">
               {#if t.status === 'eating'}
@@ -109,8 +112,7 @@
   <div class="modal-overlay" onclick={() => showAddTable = false}>
     <div class="modal-card" onclick={(e) => e.stopPropagation()}>
       <h3>Add Table</h3>
-      <label class="field-label">Table Name</label><input type="text" bind:value={newTable.name} placeholder="e.g. Table 9" />
-      <label class="field-label">Seats</label><input type="number" bind:value={newTable.seats} min="1" max="20" />
+      <label class="field-label">Table Number</label><input type="number" bind:value={newTable.number} placeholder="e.g. 9" min="1" />
       <div class="modal-actions"><button class="btn btn-outline" onclick={() => showAddTable = false}>Cancel</button><button class="btn btn-primary" onclick={addTable}>Add Table</button></div>
     </div>
   </div>
@@ -133,10 +135,12 @@
   .section-header h2 { font-family: var(--font-display); font-size: 22px; }
   .page-subtitle { font-size: 13px; color: var(--text-secondary); }
   .table-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .table-card { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
-  .table-top { display: flex; justify-content: space-between; align-items: center; }
-  .table-card h3 { font-size: 15px; font-weight: 600; }
-  .del-btn { width: 24px; height: 24px; border-radius: 50%; background: var(--critical-bg); color: var(--error-red); border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .table-card { padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 12px; border-top: 4px solid var(--primary-teal); }
+  .table-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .table-info { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .table-number { font-size: 18px; font-weight: 700; color: var(--text-primary); font-family: var(--font-display); }
+  .del-btn { width: 24px; height: 24px; border-radius: 50%; background: var(--card-surface); color: var(--text-secondary); border: 1px solid var(--border); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+  .del-btn:hover { background: var(--critical-bg); color: var(--error-red); border-color: var(--error-red); }
   .fw500 { font-weight: 500; }
   .muted { color: var(--text-secondary); font-size: 13px; }
   .loading-state, .empty-cell { text-align: center; padding: 40px; color: var(--text-secondary); }

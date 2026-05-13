@@ -105,7 +105,7 @@
   {:else}
     <div class="card">
       <table>
-        <thead><tr><th>ITEM NAME</th><th>CATEGORY</th><th>QUANTITY</th><th>MIN. STOCK</th><th>STATUS</th><th>LAST UPDATED</th><th>VENDOR</th><th>ACTIONS</th></tr></thead>
+        <thead><tr><th>ITEM NAME</th><th>CATEGORY</th><th>QUANTITY</th><th>MIN. STOCK</th><th>LAST UPDATED</th><th>VENDOR</th><th>ACTIONS</th></tr></thead>
         <tbody>
           {#each filtered() as item}
             <tr>
@@ -113,7 +113,6 @@
               <td class="muted">{item.category || '—'}</td>
               <td style="color:{qtyColor(item)};font-weight:600">{item.quantity} {item.unit}</td>
               <td class="muted">{item.min_stock} {item.unit}</td>
-              <td><StatusBadge status={item.status} /></td>
               <td class="muted">{item.lastUpdated || '—'}</td>
               <td class="muted">{item.vendor || '—'}</td>
               <td>
@@ -128,7 +127,7 @@
               </td>
             </tr>
           {:else}
-            <tr><td colspan="8" class="empty-cell">No items found</td></tr>
+            <tr><td colspan="7" class="empty-cell">No items found</td></tr>
           {/each}
         </tbody>
       </table>

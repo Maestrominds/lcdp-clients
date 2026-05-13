@@ -16,13 +16,13 @@ class TableDetailScreen extends StatefulWidget {
 }
 
 class _TableDetailScreenState extends State<TableDetailScreen> {
-  List<models.MenuItem> _menuItems = [];
+  List<models.MenuItem> _allMenuItems = [];
   final Map<String, int> _quantities = {};
   final Map<String, models.MenuItem> _allItemsCache = {};
   bool _loading = true;
   bool _isSending = false;
-  String _activeCategory = 'beverages';
-  final _categories = ['beverages', 'mains', 'desserts'];
+  String? _activeCategory;
+  List<String> _categories = [];
 
   @override
   void initState() { 
@@ -33,15 +33,37 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
   Future<void> _loadMenu() async {
     setState(() => _loading = true);
     try {
-      final data = await ApiService().getMenu(_activeCategory);
-      final items = (data as List).map<models.MenuItem>((m) => models.MenuItem.fromJson(m as Map<String, dynamic>)).toList();
+      final data = await ApiService().getAllMenuItems();
+      final items = (data as List)
+          .map<models.MenuItem>((m) => models.MenuItem.fromJson(m as Map<String, dynamic>))
+          .toList();
+      
       for (final item in items) {
         _allItemsCache[item.id] = item;
       }
-      if (mounted) setState(() { _menuItems = items; _loading = false; });
+
+      final categories = items.map((e) => e.category).toSet().toList();
+      categories.sort();
+
+      if (mounted) {
+        setState(() {
+          _allMenuItems = items;
+          _categories = categories;
+          if (_activeCategory == null || !_categories.contains(_activeCategory)) {
+            _activeCategory = _categories.isNotEmpty ? _categories.first : null;
+          }
+          _loading = false;
+        });
+      }
     } catch (e) {
+      debugPrint('Error loading menu: $e');
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  List<models.MenuItem> get _filteredItems {
+    if (_activeCategory == null) return [];
+    return _allMenuItems.where((item) => item.category == _activeCategory).toList();
   }
 
   int get _totalItems => _quantities.values.fold(0, (s, q) => s + q);
@@ -123,7 +145,7 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: GestureDetector(
-                    onTap: () { setState(() => _activeCategory = cat); _loadMenu(); },
+                    onTap: () { setState(() => _activeCategory = cat); },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -148,18 +170,25 @@ class _TableDetailScreenState extends State<TableDetailScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primaryTeal))
-                : ListView.builder(
-                    padding: const EdgeInsets.only(top: 8, bottom: 220),
-                    itemCount: _menuItems.length,
-                    itemBuilder: (ctx, i) {
-                      final item = _menuItems[i];
-                      return MenuItemCard(
-                        item: item,
-                        quantity: _quantities[item.id] ?? 0,
-                        onQuantityChanged: (q) => _updateQty(item.id, q),
-                      );
-                    },
-                  ),
+                : _categories.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No menu items found',
+                          style: GoogleFonts.dmSans(color: AppColors.textSecondary),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 220),
+                        itemCount: _filteredItems.length,
+                        itemBuilder: (ctx, i) {
+                          final item = _filteredItems[i];
+                          return MenuItemCard(
+                            item: item,
+                            quantity: _quantities[item.id] ?? 0,
+                            onQuantityChanged: (q) => _updateQty(item.id, q),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

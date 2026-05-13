@@ -67,7 +67,6 @@
             <div class="top-item-row">
               <span class="rank">#{item.rank}</span>
               <div class="top-item-info"><p class="top-item-name">{item.name}</p><p class="top-item-sub">{item.unitsSold} sold · ₹{item.revenue}</p></div>
-              <span class="top-item-growth" class:positive={item.growth > 0}>↑{item.growth}%</span>
             </div>
           {/each}
         </div>

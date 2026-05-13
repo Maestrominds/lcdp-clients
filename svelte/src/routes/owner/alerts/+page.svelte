@@ -37,7 +37,7 @@
         <div class="alert-card card" class:unread={!alert.read} onclick={() => markRead(alert.id)}>
           <span class="alert-dot" style="background: {dotColor(alert.type)}"></span>
           <div class="alert-content"><p class="alert-title">{alert.title}</p><p class="alert-desc">{alert.description}</p></div>
-          <span class="alert-time">{new Date(alert.createdAt).toLocaleDateString()}</span>
+          <span class="alert-time">{new Date(alert.timestamp).toLocaleDateString()}</span>
         </div>
       {:else}<div class="empty">No alerts</div>{/each}
     </div>

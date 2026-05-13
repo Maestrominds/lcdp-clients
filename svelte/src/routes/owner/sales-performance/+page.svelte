@@ -6,7 +6,6 @@
 
   let data = $state(null);
   let donutCanvas = $state();
-  let peakCanvas = $state();
   let loading = $state(true);
 
   onMount(async () => {
@@ -30,13 +29,6 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
       });
     }
-    if (peakCanvas && data.peakHours && data.peakHours.length > 0) {
-      new Chart(peakCanvas, {
-        type: 'bar',
-        data: { labels: data.peakHours.map(h => h.hour), datasets: [{ label: 'Orders', data: $state.snapshot(data.peakHours.map(h => h.orders)), backgroundColor: '#1E5F74', borderRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-      });
-    }
   });
 </script>
 
@@ -51,9 +43,8 @@
       <KpiCard label="PEAK HOUR" value={data.peakHour} />
       <KpiCard label="AVG ITEMS/ORDER" value={String(data.avgItemsPerOrder)} trend="{data.avgItemsChange}%" trendUp={true} />
     </div>
-    <div class="two-col">
+    <div class="one-col">
       <div class="card chart-card"><h3>Sales by Category</h3><div class="chart-box"><canvas bind:this={donutCanvas}></canvas></div></div>
-      <div class="card chart-card"><h3>Peak Hours</h3><div class="chart-box"><canvas bind:this={peakCanvas}></canvas></div></div>
     </div>
     <div class="card">
       <h3 class="list-title">Top Selling Items</h3>
@@ -78,7 +69,7 @@
 <style>
   .sales-page { display: flex; flex-direction: column; gap: 24px; }
   .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .one-col { display: grid; grid-template-columns: 1fr; gap: 20px; }
   .chart-card { padding: 24px; }
   .chart-card h3 { font-family: var(--font-display); font-size: 16px; margin-bottom: 16px; }
   .chart-box { height: 280px; position: relative; }
