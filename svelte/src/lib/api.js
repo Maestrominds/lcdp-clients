@@ -3,7 +3,7 @@
  * All API calls go through this module.
  */
 
-import API_BASE_URL from '$env/static/public';
+import { API_BASE_URL } from '$env/static/public';
 
 const authHeaders = () => ({
   'Content-Type': 'application/json'
