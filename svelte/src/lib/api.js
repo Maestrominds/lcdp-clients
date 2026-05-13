@@ -33,15 +33,15 @@ const kitchenHandle = async (res) => {
   return text ? JSON.parse(text) : null;
 };
 
-const get = (path) => fetch(`${API_BASE_URL}${path}`, { headers: authHeaders(), credentials: 'include' }).then(handle);
-const post = (path, body) => fetch(`${API_BASE_URL}${path}`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body), credentials: 'include' }).then(handle);
-const patch = (path, body) => fetch(`${API_BASE_URL}${path}`, { method: 'PATCH', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined, credentials: 'include' }).then(handle);
-const del = (path) => fetch(`${API_BASE_URL}${path}`, { method: 'DELETE', headers: authHeaders(), credentials: 'include' }).then(handle);
+const get = (path) => fetch(`${PUBLIC_API_BASE_URL}${path}`, { headers: authHeaders(), credentials: 'include' }).then(handle);
+const post = (path, body) => fetch(`${PUBLIC_API_BASE_URL}${path}`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body), credentials: 'include' }).then(handle);
+const patch = (path, body) => fetch(`${PUBLIC_API_BASE_URL}${path}`, { method: 'PATCH', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined, credentials: 'include' }).then(handle);
+const del = (path) => fetch(`${PUBLIC_API_BASE_URL}${path}`, { method: 'DELETE', headers: authHeaders(), credentials: 'include' }).then(handle);
 // Kitchen uses session cookie (staff logs in via /kitchen/login) but redirects to /kitchen/login on 401
-const kitchenGet = (path) => fetch(`${API_BASE_URL}${path}`, { headers: authHeaders(), credentials: 'include' }).then(kitchenHandle);
-const kitchenPatch = (path, body) => fetch(`${API_BASE_URL}${path}`, { method: 'PATCH', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined, credentials: 'include' }).then(kitchenHandle);
+const kitchenGet = (path) => fetch(`${PUBLIC_API_BASE_URL}${path}`, { headers: authHeaders(), credentials: 'include' }).then(kitchenHandle);
+const kitchenPatch = (path, body) => fetch(`${PUBLIC_API_BASE_URL}${path}`, { method: 'PATCH', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined, credentials: 'include' }).then(kitchenHandle);
 // Public (no-cookie) for OTP auth endpoints
-const pub = (path, body) => fetch(`${API_BASE_URL}${path}`, { method: body ? 'POST' : 'GET', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined }).then(async res => { if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`); const t = await res.text(); return t ? JSON.parse(t) : null; });
+const pub = (path, body) => fetch(`${PUBLIC_API_BASE_URL}${path}`, { method: body ? 'POST' : 'GET', headers: authHeaders(), body: body ? JSON.stringify(body) : undefined }).then(async res => { if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`); const t = await res.text(); return t ? JSON.parse(t) : null; });
 
 export const api = {
   // Auth
@@ -112,11 +112,11 @@ export const api = {
   // Kitchen Auth (uses existing /login & /login/verify — NO backend changes needed)
   kitchenRequestOTP: (phone, role) => {
     const params = new URLSearchParams({ phone, role });
-    return fetch(`${API_BASE_URL}/login?${params}`, { headers: authHeaders() })
+    return fetch(`${PUBLIC_API_BASE_URL}/login?${params}`, { headers: authHeaders() })
       .then(async res => { if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`); return res.json(); });
   },
   kitchenVerifyOTP: (phone, otp) =>
-    fetch(`${API_BASE_URL}/login/verify`, {
+    fetch(`${PUBLIC_API_BASE_URL}/login/verify`, {
       method: 'POST', headers: authHeaders(),
       body: JSON.stringify({ phone, otp }),
       credentials: 'include'  // receive session cookie
