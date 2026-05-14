@@ -47,7 +47,7 @@ export const api = {
   // Auth
   managerLogin: (email, password) => post('/auth/manager/login', { email, password }),
   ownerLogin: (email, password) => post('/auth/owner/login', { email, password }),
-  logout: () => { /* Browser handles cookies, but we could call a logout endpoint */ },
+  logout: () => post('/logout', {}).catch(e => console.error('Logout error:', e)),
 
   // Tables (CRUD)
   getTables: () => get('/dining-tables'),
@@ -122,12 +122,12 @@ export const api = {
       credentials: 'include'  // receive session cookie
     }).then(async res => {
       if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-      localStorage.setItem('kitchen_logged_in', 'true');
       return res.json();
     }),
   kitchenLogout: () => {
-    localStorage.removeItem('kitchen_logged_in');
-    if (typeof window !== 'undefined') window.location.href = '/kitchen/login';
+    post('/logout', {}).catch(e => console.error('Logout error:', e)).then(() => {
+      if (typeof window !== 'undefined') window.location.href = '/kitchen/login';
+    });
   },
 
   // Kitchen Display (protected by session cookie after login above)

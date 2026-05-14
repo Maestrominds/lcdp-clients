@@ -138,6 +138,15 @@ class ApiService {
       await post('/login/verify', {'phone': phone, 'otp': code})
           as Map<String, dynamic>;
 
+  Future<void> logout() async {
+    try {
+      await post('/logout', {});
+    } catch (e) {
+      debugPrint('[API LOGOUT ERROR] $e');
+    }
+    await clearToken();
+  }
+
   void _updateCookie(http.Response response) {
     if (kIsWeb) return; // Browser handles cookies on Web
 

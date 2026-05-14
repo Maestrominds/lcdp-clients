@@ -67,7 +67,7 @@ class _TablesScreenState extends State<TablesScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-              await ApiService().clearToken();
+              await ApiService().logout();
               if (!mounted) return;
               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const PhoneLoginScreen()), (route) => false);
             },

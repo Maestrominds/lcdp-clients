@@ -109,7 +109,7 @@
     );
 
     $effect(() => {
-        if (!isAuthed || isLoginPage) {
+        if (isLoginPage) {
             lastAlertsFetch = 0;
             return;
         }
@@ -118,8 +118,10 @@
 
     function handleNavigate(id, path) {
         if (id === "signout") {
-            logout();
-            goto("/manager/login");
+            api.logout().finally(() => {
+                logout();
+                goto("/manager/login");
+            });
         } else goto(path);
     }
 
